@@ -87,7 +87,7 @@ internal class GameApiClient : IGameApiClient
             apiUrl: apiUrl,
             path: "/Api/Game/BetRecordByPage",
             jsonNode: json,
-            logPrefix: "CheckTransfer",
+            logPrefix: "BetRecordByPage",
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
