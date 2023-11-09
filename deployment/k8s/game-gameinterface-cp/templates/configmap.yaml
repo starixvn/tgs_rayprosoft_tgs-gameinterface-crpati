@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: configmap-{{ include "game-gameinterface-crpati.fullname" . }}
+  name: configmap-{{ include "game-gameinterface-cp.fullname" . }}
   labels:
-    {{- include "game-gameinterface-crpati.labels" . | nindent 4 }}
+    {{- include "game-gameinterface-cp.labels" . | nindent 4 }}
 data:
   appsettings.json: |
     {

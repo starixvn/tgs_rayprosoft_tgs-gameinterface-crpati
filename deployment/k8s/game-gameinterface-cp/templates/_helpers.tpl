@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "game-gameinterface-crpati.name" -}}
+{{- define "game-gameinterface-cp.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "game-gameinterface-crpati.fullname" -}}
+{{- define "game-gameinterface-cp.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "game-gameinterface-crpati.chart" -}}
+{{- define "game-gameinterface-cp.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "game-gameinterface-crpati.labels" -}}
-helm.sh/chart: {{ include "game-gameinterface-crpati.chart" . }}
-{{ include "game-gameinterface-crpati.selectorLabels" . }}
+{{- define "game-gameinterface-cp.labels" -}}
+helm.sh/chart: {{ include "game-gameinterface-cp.chart" . }}
+{{ include "game-gameinterface-cp.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,21 +45,21 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "game-gameinterface-crpati.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "game-gameinterface-crpati.name" . }}
+{{- define "game-gameinterface-cp.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "game-gameinterface-cp.name" . }}
 app.kubernetes.io/instance: RELEASE-NAME
-app: {{ include "game-gameinterface-crpati.name" . }}
+app: {{ include "game-gameinterface-cp.name" . }}
 tgs.kind: game
 tgs.game.kind: gameinterface
-tgs.gameprovider.kind: crpati
+tgs.gameprovider.kind: cp
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "game-gameinterface-crpati.serviceAccountName" -}}
+{{- define "game-gameinterface-cp.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "game-gameinterface-crpati.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "game-gameinterface-cp.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}

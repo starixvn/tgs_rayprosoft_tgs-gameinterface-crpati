@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "game-gameinterface-crpati.fullname" . }}
+  name: {{ include "game-gameinterface-cp.fullname" . }}
   labels:
-    {{- include "game-gameinterface-crpati.labels" . | nindent 4 }}
+    {{- include "game-gameinterface-cp.labels" . | nindent 4 }}
 spec:
   clusterIP: None
   type: {{ .Values.service.type }}
@@ -17,4 +17,4 @@ spec:
       protocol: TCP
       name: grpc
   selector:
-    {{- include "game-gameinterface-crpati.selectorLabels" . | nindent 4 }}
+    {{- include "game-gameinterface-cp.selectorLabels" . | nindent 4 }}

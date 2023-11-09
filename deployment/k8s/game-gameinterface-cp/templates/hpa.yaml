@@ -2,14 +2,14 @@
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "game-gameinterface-crpati.fullname" . }}
+  name: {{ include "game-gameinterface-cp.fullname" . }}
   labels:
-    {{- include "game-gameinterface-crpati.labels" . | nindent 4 }}
+    {{- include "game-gameinterface-cp.labels" . | nindent 4 }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "game-gameinterface-crpati.fullname" . }}
+    name: {{ include "game-gameinterface-cp.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:

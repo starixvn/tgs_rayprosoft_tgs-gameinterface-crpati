@@ -1,7 +1,7 @@
 variables:
-  ImageName: pgtgs/game-gameinterface-crpati
-  TgsSettingKey: game-gameinterface-crpati
-  HelmTemplateFolderName: game-gameinterface-crpati
+  ImageName: pgtgs/game-gameinterface-cp
+  TgsSettingKey: game-gameinterface-cp
+  HelmTemplateFolderName: game-gameinterface-cp
   BuildCacheKey: Tgs.GameInterface.CrPati.$CI_PIPELINE_ID
 
 default:

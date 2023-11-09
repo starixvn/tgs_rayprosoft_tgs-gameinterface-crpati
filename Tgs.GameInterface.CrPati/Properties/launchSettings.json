@@ -17,7 +17,7 @@
       "applicationUrl": "http://localhost:5071",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "OTEL_SERVICE_NAME": "Game-GameInterface-CrPati(local)",
+        "OTEL_SERVICE_NAME": "Game-GameInterface-CP(local)",
         "NODE_IP": "otel.rpgp.cc"
       }
     },
@@ -29,7 +29,7 @@
       "applicationUrl": "https://localhost:7266;http://localhost:5071",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "OTEL_SERVICE_NAME": "Game-GameInterface-CrPati(local)",
+        "OTEL_SERVICE_NAME": "Game-GameInterface-CP(local)",
         "NODE_IP": "otel.rpgp.cc"
       }
     }

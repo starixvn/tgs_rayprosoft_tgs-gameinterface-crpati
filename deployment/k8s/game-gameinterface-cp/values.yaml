@@ -1,19 +1,19 @@
-# Default values for game-gameinterface-crpati.
+# Default values for game-gameinterface-cp.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
 
 image:
-  repository: pgtgs/game-gameinterface-crpati
+  repository: pgtgs/game-gameinterface-cp
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
 imagePullSecrets:
   - name: dockerhub
-nameOverride: "game-gameinterface-crpati"
-fullnameOverride: "game-gameinterface-crpati"
+nameOverride: "game-gameinterface-cp"
+fullnameOverride: "game-gameinterface-cp"
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -95,5 +95,5 @@ affinity:
         - key: app
           operator: In
           values:
-          - game-gameinterface-crpati
+          - game-gameinterface-cp
       topologyKey: kubernetes.io/hostname

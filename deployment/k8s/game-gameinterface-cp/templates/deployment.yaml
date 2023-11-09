@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "game-gameinterface-crpati.fullname" . }}
+  name: {{ include "game-gameinterface-cp.fullname" . }}
   labels:
-    {{- include "game-gameinterface-crpati.labels" . | nindent 4 }}
+    {{- include "game-gameinterface-cp.labels" . | nindent 4 }}
   annotations:
     reloader.stakater.com/auto: "true"
 spec:
@@ -12,7 +12,7 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      {{- include "game-gameinterface-crpati.selectorLabels" . | nindent 6 }}
+      {{- include "game-gameinterface-cp.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -20,13 +20,13 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "game-gameinterface-crpati.selectorLabels" . | nindent 8 }}
+        {{- include "game-gameinterface-cp.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "game-gameinterface-crpati.serviceAccountName" . }}
+      serviceAccountName: {{ include "game-gameinterface-cp.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -37,7 +37,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: OTEL_SERVICE_NAME
-              value: Game-GameInterface-CrPati({{ .Release.Namespace }})
+              value: Game-GameInterface-CP({{ .Release.Namespace }})
             - name: NODE_IP
               valueFrom:
                 fieldRef:
@@ -114,7 +114,7 @@ spec:
       volumes:
         - name: appsettings
           configMap:
-            name: configmap-{{ include "game-gameinterface-crpati.fullname" . }}
+            name: configmap-{{ include "game-gameinterface-cp.fullname" . }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
