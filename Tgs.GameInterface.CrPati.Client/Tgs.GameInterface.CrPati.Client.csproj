@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Version>0.0.1</Version>
+		<Authors>Raypro</Authors>
+		<RootNamespace>Tgs.GameInterface.CrPati.Client</RootNamespace>
+		<PackageId>Tgs.GameInterface.CrPati.Client</PackageId>
+		<Title>Tgs.GameInterface.CrPati.Client</Title>
+		<PackageProjectUrl>https://gitlab.com/rayprosoft/tgs-gameinterface-crpati</PackageProjectUrl>
+		<RepositoryUrl>https://gitlab.com/rayprosoft/tgs-gameinterface-crpati.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>Tgs GameInterface CrPati Client</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.58.0" />
+		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.58.0" />
+		<PackageReference Include="Grpc.Tools" Version="2.59.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="PhoenixToolkits.Protobuf.ExtendTypes" Version="0.0.6" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Protobuf Include="..\Tgs.GameInterface.CrPati\Protos\gameinterfacecrpati.proto">
+	    <Link>gameinterfacecrpati.proto</Link>
+	  </Protobuf>
+	</ItemGroup>
+</Project>

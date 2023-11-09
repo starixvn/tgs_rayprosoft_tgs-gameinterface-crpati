@@ -1,0 +1,314 @@
+﻿using System.Diagnostics;
+using System.Net.Mime;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Tgs.GameInterface.CrPati.Core.Exceptions;
+using Tgs.GameInterface.CrPati.Core.Extensions;
+using Tgs.GameInterface.CrPati.Core.Models;
+
+namespace Tgs.GameInterface.CrPati.Core;
+
+internal class GameApiClient : IGameApiClient
+{
+    private readonly ILogger<GameApiClient> _logger;
+    private readonly ISystemClock _systemClock;
+    private readonly IHashCryptography _cryptography;
+    private readonly HttpClient _client;
+    private readonly GameApiSettingsOptions _gameApiSettings;
+    private readonly PolicySettingsOptions _policySettings;
+
+    public GameApiClient(
+        ILogger<GameApiClient> logger,
+        IOptions<GameApiSettingsOptions> gameApiSettingsOptions,
+        IOptions<PolicySettingsOptions> policySettingsOptions,
+        ISystemClock systemClock,
+        IHashCryptography cryptography,
+        HttpClient client)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _gameApiSettings = gameApiSettingsOptions.Value;
+        _policySettings = policySettingsOptions.Value;
+        _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
+        _cryptography = cryptography ?? throw new ArgumentNullException(nameof(cryptography));
+        _client = client ?? throw new ArgumentNullException(nameof(client));
+    }
+
+    public async ValueTask<BalanceResult> BalanceAsync(Uri apiUrl, string apiKey, string apiSecret, string memberAccount, string userIP, CancellationToken cancellationToken = default)
+    {
+        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = _cryptography.GetBalanceHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, apiSecret, timestamp);
+        var json = new JsonObject
+        {
+            ["ApiKey"] = apiKey,
+            ["Timestamp"] = timestamp,
+            ["Game"] = _gameApiSettings.Game,
+            ["MemberAccount"] = memberAccount,
+            ["MemberPassword"] = _gameApiSettings.MemberPassword,
+            ["UserIP"] = userIP,
+            ["Hash"] = hash
+        };
+
+        var jsonNode = await PostAsync(
+            apiUrl: apiUrl,
+            path: "/Api/Game/Balance",
+            jsonNode: json,
+            logPrefix: "Balance",
+            cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        return !jsonNode["IsSuccess"]!.GetValue<bool>()
+            ? jsonNode["Code"]!.GetValue<int>() == 2008
+                ? new BalanceResult(false, 0)
+                : throw new ReturnCodeException(jsonNode["Code"]!.GetValue<int>())
+            : new BalanceResult(true, jsonNode["Data"]!["Balance"]!.GetValue<decimal>());
+    }
+
+    public async IAsyncEnumerable<BetRecordResult> BetRecordByPageAsyncc(Uri apiUrl, string apiKey, string apiSecret, DateTimeOffset startDate, DateTimeOffset endDate, int pageNumber = 1, int pageSize = 1000, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = _cryptography.GetBetRecordByPageHash(apiKey, _gameApiSettings.Game, startDate.DatetimeConvertToString(), endDate.DatetimeConvertToString(), apiSecret, timestamp);
+        var json = new JsonObject
+        {
+            ["ApiKey"] = apiKey,
+            ["Timestamp"] = timestamp,
+            ["Game"] = _gameApiSettings.Game,
+            ["StartDate"] = startDate.DatetimeConvertToString(),
+            ["EndDate"] = endDate.DatetimeConvertToString(),
+            ["PageNumber"] = pageNumber,
+            ["PageSize"] = pageSize,
+            ["Hash"] = hash
+        };
+
+        var jsonNode = await PostAsync(
+            apiUrl: apiUrl,
+            path: "/Api/Game/BetRecordByPage",
+            jsonNode: json,
+            logPrefix: "CheckTransfer",
+            cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        if (!jsonNode["IsSuccess"]!.GetValue<bool>())
+        {
+            throw new ReturnCodeException(jsonNode["Code"]!.GetValue<int>());
+        }
+
+        var datas = jsonNode["Data"]?.AsArray();
+
+        if (datas is null || !datas.Any())
+        {
+            yield break;
+        }
+
+        foreach (var data in datas)
+        {
+            if (data is null)
+            {
+                continue;
+            }
+
+            yield return new BetRecordResult(
+                BetID: data["BetID"]!.GetValue<string>(),
+                Odds: data["Odds"]!.GetValue<decimal>(),
+                OddsType: data["OddsType"]!.GetValue<int>(),
+                GameCode: data["GameCode"]!.GetValue<string>(),
+                MemberAccount: data["MemberAccount"]!.GetValue<string>(),
+                ModifyDate: data["ModifyDate"]!.GetValue<DateTimeOffset>(),
+                BetDate: data["BetDate"]!.GetValue<DateTimeOffset>(),
+                SettleDate: data["SettleDate"]?.GetValue<DateTimeOffset>() ?? DateTimeOffset.UnixEpoch,
+                Bet: data["Bet"]!.GetValue<decimal>(),
+                ValidBet: data["ValidBet"]!.GetValue<decimal>(),
+                TotalPayout: data["TotalPayout"]!.GetValue<decimal>(),
+                TotalWinlose: data["TotalWinlose"]!.GetValue<decimal>(),
+                BetContent: data["BetContent"]!.GetValue<string>(),
+                //結算狀態 (0:未結算 1:取消/退回 2: 拒絕 3:已結算 4:提前結算/兌現)
+                BetStatus: data["BetStatus"]!.GetValue<int>(),
+                GameType: data["GameType"]!.GetValue<int>(),
+                GameKind: data["GameKind"]!.GetValue<int>(),
+                AdditionalData: data.ToJsonString());
+        }
+    }
+
+    public async ValueTask<bool> CheckTransferAsync(Uri apiUrl, string apiKey, string apiSecret, string memberAccount, string orderNo, string userIP, CancellationToken cancellationToken = default)
+    {
+        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = _cryptography.GetCheckTransferHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, orderNo, apiSecret, timestamp);
+        var json = new JsonObject
+        {
+            ["ApiKey"] = apiKey,
+            ["Timestamp"] = timestamp,
+            ["Game"] = _gameApiSettings.Game,
+            ["MemberAccount"] = memberAccount,
+            ["MemberPassword"] = _gameApiSettings.MemberPassword,
+            ["OrderNo"] = orderNo,
+            ["UserIP"] = userIP,
+            ["Hash"] = hash
+        };
+
+        var jsonNode = await PostAsync(
+            apiUrl: apiUrl,
+            path: "/Api/Game/CheckTransfer",
+            jsonNode: json,
+            logPrefix: "CheckTransfer",
+            cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        return jsonNode["IsSuccess"]!.GetValue<bool>()
+            || (jsonNode["Code"]!.GetValue<int>() == 2022 ? false
+            : throw new ReturnCodeException(jsonNode["Code"]!.GetValue<int>()));
+    }
+
+    public async ValueTask<LoginResult> LoginAsync(Uri apiUrl, string apiKey, string apiSecret, string memberAccount, string userIP, int languageCode, bool isMobile, bool isTrial, CancellationToken cancellationToken = default)
+    {
+        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = _cryptography.GetLoginHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, _gameApiSettings.GameCode, userIP, apiSecret, timestamp);
+        var json = new JsonObject
+        {
+            ["ApiKey"] = apiKey,
+            ["Timestamp"] = timestamp,
+            ["Game"] = _gameApiSettings.Game,
+            ["MemberAccount"] = memberAccount,
+            ["MemberPassword"] = _gameApiSettings.MemberPassword,
+            ["GameCode"] = _gameApiSettings.GameCode,
+            ["UserIP"] = userIP,
+            ["DeviceType"] = (isMobile) ? 1 : 0,
+            ["LanguageCode"] = languageCode,
+            ["IsTrial"] = (isTrial) ? 1 : 0,
+            ["Hash"] = hash
+        };
+
+        var jsonNode = await PostAsync(
+            apiUrl: apiUrl,
+            path: "/Api/Game/Login",
+            jsonNode: json,
+            logPrefix: "Login",
+            cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        return !jsonNode["IsSuccess"]!.GetValue<bool>()
+            ? jsonNode["Code"]!.GetValue<int>() == 2008
+                ? new LoginResult(false, string.Empty)
+                : throw new ReturnCodeException(jsonNode["Code"]!.GetValue<int>())
+            : new LoginResult(true, jsonNode["Data"]!["GameUrl"]!.GetValue<string>());
+    }
+
+    public async ValueTask RegisterAsync(Uri apiUrl, string apiKey, string apiSecret, string memberAccount, string userIP, CancellationToken cancellationToken = default)
+    {
+        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = _cryptography.GetRegisterHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, apiSecret, timestamp);
+        var json = new JsonObject
+        {
+            ["ApiKey"] = apiKey,
+            ["Timestamp"] = timestamp,
+            ["Game"] = _gameApiSettings.Game,
+            ["MemberAccount"] = memberAccount,
+            ["MemberPassword"] = _gameApiSettings.MemberPassword,
+            ["UserIP"] = userIP,
+            ["Hash"] = hash
+        };
+
+        var jsonNode = await PostAsync(
+            apiUrl: apiUrl,
+            path: "/Api/Game/Register",
+            jsonNode: json,
+            logPrefix: "Register",
+            cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        if (!jsonNode["IsSuccess"]!.GetValue<bool>())
+        {
+            if (jsonNode["Code"]!.GetValue<int>() != 2002)
+            {
+                throw new ReturnCodeException(jsonNode["Code"]!.GetValue<int>());
+            }
+        }
+    }
+
+    public async ValueTask<TransferResult> TransferAsync(Uri apiUrl, string apiKey, string apiSecret, string memberAccount, TransType transType, decimal amount, string orderNo, string userIP, CancellationToken cancellationToken = default)
+    {
+        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = _cryptography.GetTransferHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, orderNo, transType.ToString(), amount, apiSecret, timestamp);
+        var json = new JsonObject
+        {
+            ["ApiKey"] = apiKey,
+            ["Timestamp"] = timestamp,
+            ["Game"] = _gameApiSettings.Game,
+            ["MemberAccount"] = memberAccount,
+            ["MemberPassword"] = _gameApiSettings.MemberPassword,
+            ["TransType"] = transType.ToString(),
+            ["Amount"] = amount,
+            ["OrderNo"] = orderNo,
+            ["UserIP"] = userIP,
+            ["Hash"] = hash
+        };
+
+        var jsonNode = await PostAsync(
+            apiUrl: apiUrl,
+            path: "/Api/Game/Transfer",
+            jsonNode: json,
+            logPrefix: "Transfer",
+            cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        return !jsonNode["IsSuccess"]!.GetValue<bool>()
+            ? throw new ReturnCodeException(jsonNode["Code"]!.GetValue<int>())
+            : new TransferResult(
+            jsonNode["Data"]!["APIOrderNo"]!.ToString(),
+            jsonNode["Data"]!["Balance"]!.GetValue<decimal>(),
+            jsonNode.ToJsonString());
+    }
+
+    private async ValueTask<JsonNode> PostAsync(Uri apiUrl, string path, JsonNode jsonNode, string logPrefix, CancellationToken cancellationToken = default)
+    {
+        var uriBuilder = new UriBuilder(new Uri(apiUrl, path));
+
+        logPrefix = $"{nameof(GameApiClient)}.{logPrefix}";
+
+        var requestContent = new StringContent(jsonNode.ToJsonString(), Encoding.UTF8, mediaType: MediaTypeNames.Application.Json);
+
+        var sw = Stopwatch.StartNew();
+
+        var httpResponseMessage = await _client.PostAsync(
+            requestUri: uriBuilder.ToString(),
+            content: requestContent,
+            cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        sw.Stop();
+
+        var responseMessage = default(string);
+        using (var sr = new StreamReader(httpResponseMessage.Content.ReadAsStreamAsync(cancellationToken).Result))
+        {
+            responseMessage = await sr.ReadToEndAsync(
+                cancellationToken: cancellationToken)
+                .ConfigureAwait(false)
+                ?? string.Empty;
+        }
+
+        var logEvent = new GameApiLogEvent
+        {
+            Path = httpResponseMessage.RequestMessage?.RequestUri?.AbsoluteUri.NoLongerThan(512) ?? string.Empty,
+            Method = httpResponseMessage.RequestMessage?.Method.ToString().NoLongerThan(8) ?? string.Empty,
+            Prefix = logPrefix ?? throw new ArgumentNullException(nameof(logPrefix)),
+            ServerName = Environment.MachineName.NoLongerThan(128),
+            RequestHeaders = httpResponseMessage.RequestMessage?.Headers + httpResponseMessage.RequestMessage?.Content?.Headers?.ToString(),
+            RequestContent = (await requestContent.ReadAsStringAsync(cancellationToken).ConfigureAwait(false)).NoLongerThan(4096),
+            ResponseHeaders = httpResponseMessage.Headers.ToString(),
+            ResponseContent = responseMessage.NoLongerThan(4096),
+            ResponseCode = (short)httpResponseMessage.StatusCode,
+            ExecutionTimeMs = (int)sw.ElapsedMilliseconds,
+            RecordedOn = DateTimeOffset.UtcNow
+        };
+
+        _logger.LogInformation("{logEvent}", JsonSerializer.Serialize(logEvent));
+
+        _ = httpResponseMessage.EnsureSuccessStatusCode();
+
+        return string.IsNullOrEmpty(responseMessage)
+            ? throw new Exception("Game provider response content is empty.")
+            : JsonNode.Parse(responseMessage)!;
+    }
+}
