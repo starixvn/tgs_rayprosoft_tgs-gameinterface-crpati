@@ -148,11 +148,10 @@ public class CrPatiController : ControllerBase
     ///             "apiUrl": "https://apitest.fastapi2020.com/",
     ///             "apiKey": "testgpi123123",
     ///             "apiSecret": "qOV55DQYYItjW1qPArpdLNQpWY3ykFoJi4TRF86CA1A9O4pQwR",
-    ///             "startTime": "2023-11-08T13:00:00+08:00",
-    ///             "endTime": "2023-11-08T14:00:00+08:00",
+    ///             "startTime": ""2023-11-09T17:00:00+08:00",
+    ///             "endTime": ""2023-11-09T19:00:00+08:00",
     ///             "pageNumber": 1,
     ///             "pageSize": 1000
-    ///
     ///         }
     /// </remarks>
     [HttpPost("game/wager")]

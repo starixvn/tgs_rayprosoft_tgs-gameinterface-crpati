@@ -621,4 +621,98 @@ public class BetRecordByPageUnitTest
 
         Assert.False(actual.Any());
     }
+
+    [Fact]
+    public async Task Retry()
+    {
+        var apiUrl = new Uri("https://apitest.fastapi2020.com/");
+        var apiKey = "testgpi123123";
+        var apiSecret = "qOV55DQYYItjW1qPArpdLNQpWY3ykFoJi4TRF86CA1A9O4pQwR";
+        var startDate = DateTimeOffset.Parse("2023-11-09T02:20:00+00:00");
+        var endDate = DateTimeOffset.Parse("2023-11-09T02:30:00+00:00");
+        var pageNumber = 1;
+        var pageSize = 1000;
+        var gameApiSettingsOptions = Options.Create(new GameApiSettingsOptions
+        {
+            Game = "CP",
+            GameCode = "CPCP_Home",
+            MemberPassword = "TgsPassw0rd"
+        });
+        var policySettingsOptions = Options.Create(new PolicySettingsOptions
+        {
+            BetRecordByPageRetryCount = 1,
+            BetRecordByPageRetryWaitSec = 1
+        });
+        var fakeSystemClock = Substitute.For<ISystemClock>();
+        var fakeCryptography = Substitute.For<IHashCryptography>();
+
+        var currentTime = DateTimeOffset.FromUnixTimeSeconds(1699498478);
+        _ = fakeSystemClock.CurrentTime
+            .Returns(currentTime);
+
+        var hash = "test";
+        _ = fakeCryptography.GetBetRecordByPageHash(
+            apiKey: Arg.Is(apiKey),
+            game: Arg.Is(gameApiSettingsOptions.Value.Game),
+            startDate: Arg.Is("2023-11-09 10:20:00"),
+            endDate: Arg.Is("2023-11-09 10:30:00"),
+            apiSecret: Arg.Is(apiSecret),
+            timestamp: Arg.Is(currentTime.ToUnixTimeSeconds()))
+            .Returns(hash);
+
+        var request = new JsonObject
+        {
+            ["ApiKey"] = apiKey,
+            ["Timestamp"] = currentTime.ToUnixTimeSeconds(),
+            ["Game"] = gameApiSettingsOptions.Value.Game,
+            ["StartDate"] = "2023-11-09 10:20:00",
+            ["EndDate"] = "2023-11-09 10:30:00",
+            ["PageNumber"] = pageNumber,
+            ["PageSize"] = pageSize,
+            ["Hash"] = hash
+        };
+        var response = new JsonObject
+        {
+            ["IsSuccess"] = false,
+            ["Code"] = 2019,
+            ["Message"] = "取得投注記錄太頻繁",
+            ["PageInfo"] = new JsonObject
+            {
+                ["PageNumber"] = 1,
+                ["PageSize"] = 1000,
+                ["TotalPageCount"] = 0,
+                ["TotalRecordCount"] = 0
+            },
+            ["Data"] = new JsonArray { }
+        };
+
+        var handler = new MockHttpMessageHandler();
+        _ = handler.Expect(HttpMethod.Post, new Uri(apiUrl, "/Api/Game/BetRecordByPage").ToString())
+            .WithJsonContent(request)
+            .Respond(HttpStatusCode.OK, new StringContent(response.ToJsonString(), Encoding.UTF8, MediaTypeNames.Application.Json));
+
+        var fakeHttpClient = handler.ToHttpClient();
+        var fakeLog = NullLogger<GameApiClient>.Instance;
+
+        var client = new GameApiClient(
+            fakeLog,
+            gameApiSettingsOptions,
+            policySettingsOptions,
+            fakeSystemClock,
+            fakeCryptography,
+            fakeHttpClient);
+
+        _ = await Assert.ThrowsAsync<MockHttpMatchException>(
+            () => client.BetRecordByPageAsyncc(
+                apiUrl: apiUrl,
+                apiKey: apiKey,
+                apiSecret: apiSecret,
+                startDate: startDate,
+                endDate: endDate,
+                pageSize: pageSize,
+                pageNumber: pageNumber)
+            .ToArrayAsync()
+            .AsTask());
+
+    }
 }

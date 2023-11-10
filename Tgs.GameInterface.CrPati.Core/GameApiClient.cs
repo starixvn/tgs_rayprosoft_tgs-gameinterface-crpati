@@ -6,9 +6,11 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
 using Tgs.GameInterface.CrPati.Core.Exceptions;
 using Tgs.GameInterface.CrPati.Core.Extensions;
 using Tgs.GameInterface.CrPati.Core.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Tgs.GameInterface.CrPati.Core;
 
@@ -83,12 +85,38 @@ internal class GameApiClient : IGameApiClient
             ["Hash"] = hash
         };
 
-        var jsonNode = await PostAsync(
-            apiUrl: apiUrl,
-            path: "/Api/Game/BetRecordByPage",
-            jsonNode: json,
-            logPrefix: "BetRecordByPage",
-            cancellationToken: cancellationToken)
+
+        var retryPolicy = Policy
+            .HandleResult<JsonNode>(jsonNode => !jsonNode["IsSuccess"]!.GetValue<bool>() && jsonNode["Code"]!.GetValue<int>() == 2019)
+            .WaitAndRetryAsync(
+            retryCount: _policySettings.BetRecordByPageRetryCount,
+            retryAttempt => TimeSpan.FromSeconds(_policySettings.BetRecordByPageRetryWaitSec),
+            onRetry: (response, retryTime, context) =>
+            {
+                _logger.LogWarning("LogOn:{logOn} | Message:拉單過於頻繁(兩次拉單時間間隔必須大於 10 秒 | Json:{jsonNode}", DateTime.Now.ToString("o"), response.Result.ToJsonString());
+                timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
+                hash = _cryptography.GetBetRecordByPageHash(apiKey, _gameApiSettings.Game, startDate.DatetimeConvertToString(), endDate.DatetimeConvertToString(), apiSecret, timestamp);
+                json = new JsonObject
+                {
+                    ["ApiKey"] = apiKey,
+                    ["Timestamp"] = timestamp,
+                    ["Game"] = _gameApiSettings.Game,
+                    ["StartDate"] = startDate.DatetimeConvertToString(),
+                    ["EndDate"] = endDate.DatetimeConvertToString(),
+                    ["PageNumber"] = pageNumber,
+                    ["PageSize"] = pageSize,
+                    ["Hash"] = hash
+                };
+            });
+
+        var jsonNode = await retryPolicy .ExecuteAsync(
+            ()=> PostAsync(
+                apiUrl: apiUrl,
+                path: "/Api/Game/BetRecordByPage",
+                jsonNode: json,
+                logPrefix: "BetRecordByPage",
+                cancellationToken: cancellationToken)
+            .AsTask())
             .ConfigureAwait(false);
 
         if (!jsonNode["IsSuccess"]!.GetValue<bool>())
