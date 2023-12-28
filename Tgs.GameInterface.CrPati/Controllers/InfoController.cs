@@ -10,15 +10,10 @@ namespace Tgs.GameInterface.CrPati.Controllers;
 
 [Route("[controller]")]
 [ApiController]
-public class InfoController : ControllerBase
+public class InfoController(
+    IOptions<GameApiSettingsOptions> options) : ControllerBase
 {
-    private readonly GameApiSettingsOptions _gameApiSettingsOptions;
-
-    public InfoController(
-        IOptions<GameApiSettingsOptions> options)
-    {
-        _gameApiSettingsOptions = options.Value;
-    }
+    private readonly GameApiSettingsOptions _gameApiSettingsOptions = options.Value;
 
     [HttpGet]
     public async Task<object> GetAsync([FromServices] IWebHostEnvironment _hostingEnvironment)

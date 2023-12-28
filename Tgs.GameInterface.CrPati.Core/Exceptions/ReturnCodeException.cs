@@ -1,11 +1,7 @@
 ﻿namespace Tgs.GameInterface.CrPati.Core.Exceptions;
 
-public class ReturnCodeException : Exception
+public class ReturnCodeException(int code) : Exception(ConvertErrorMesaage(code))
 {
-    public ReturnCodeException(int code) : base(ConvertErrorMesaage(code))
-    {
-    }
-
     private static string ConvertErrorMesaage(int code) => code switch
     {
         0 => "執行成功",

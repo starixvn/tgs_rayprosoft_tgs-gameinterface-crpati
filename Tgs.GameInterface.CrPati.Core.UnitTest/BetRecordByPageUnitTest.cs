@@ -713,6 +713,5 @@ public class BetRecordByPageUnitTest
                 pageNumber: pageNumber)
             .ToArrayAsync()
             .AsTask());
-
     }
 }

@@ -4,15 +4,9 @@ using Tgs.GameInterface.CrPati.Protos;
 
 namespace Tgs.GameInterface.CrPati.Client;
 
-internal class GameInterfaceCrPatiClient : IGameInterfaceCrPatiClient
+internal class GameInterfaceCrPatiClient(
+    GameInterfaceCrPati.GameInterfaceCrPatiClient client) : IGameInterfaceCrPatiClient
 {
-    private readonly GameInterfaceCrPati.GameInterfaceCrPatiClient _client;
-
-    public GameInterfaceCrPatiClient(GameInterfaceCrPati.GameInterfaceCrPatiClient client)
-    {
-        _client = client ?? throw new ArgumentNullException(nameof(client));
-    }
-
     public async ValueTask<string> CheckingServiceAsync(string machineName, CancellationToken cancellationToken = default)
     {
         var request = new CheckingServiceRequest
@@ -20,7 +14,7 @@ internal class GameInterfaceCrPatiClient : IGameInterfaceCrPatiClient
             MachineName = machineName,
         };
 
-        var reply = await _client
+        var reply = await client
             .CheckingServiceAsync(
                 request: request,
                 cancellationToken: cancellationToken)
@@ -42,7 +36,7 @@ internal class GameInterfaceCrPatiClient : IGameInterfaceCrPatiClient
             Amount = amount
         };
 
-        return await _client.FundInAsync(
+        return await client.FundInAsync(
             request: request,
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
@@ -61,7 +55,7 @@ internal class GameInterfaceCrPatiClient : IGameInterfaceCrPatiClient
             Amount = amount
         };
 
-        return await _client.FundOutAsync(
+        return await client.FundOutAsync(
             request: request,
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
@@ -79,7 +73,7 @@ internal class GameInterfaceCrPatiClient : IGameInterfaceCrPatiClient
             OrderId = orderId
         };
 
-        var reply = await _client.FundStatusAsync(
+        var reply = await client.FundStatusAsync(
             request: request,
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
@@ -100,7 +94,7 @@ internal class GameInterfaceCrPatiClient : IGameInterfaceCrPatiClient
             IsMobile = isMobile,
         };
 
-        return await _client.GameUrlAsync(
+        return await client.GameUrlAsync(
             request: request,
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
@@ -119,7 +113,7 @@ internal class GameInterfaceCrPatiClient : IGameInterfaceCrPatiClient
             PageSize = pageSize
         };
 
-        var reply = await _client.GameWagerAsync(
+        var reply = await client.GameWagerAsync(
             request: request,
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
@@ -148,7 +142,7 @@ internal class GameInterfaceCrPatiClient : IGameInterfaceCrPatiClient
             IpAddress = ipAddress
         };
 
-        return await _client.PlayerBalanceAsync(
+        return await client.PlayerBalanceAsync(
             request: request,
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
@@ -165,7 +159,7 @@ internal class GameInterfaceCrPatiClient : IGameInterfaceCrPatiClient
             IpAddress = ipAddress
         };
 
-        _ = await _client.PlayerCreateAsync(
+        _ = await client.PlayerCreateAsync(
             request: request,
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);

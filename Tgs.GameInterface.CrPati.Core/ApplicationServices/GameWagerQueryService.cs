@@ -4,21 +4,14 @@ using Tgs.ServiceUtility;
 
 namespace Tgs.GameInterface.CrPati.Core.ApplicationServices;
 
-internal class GameWagerQueryService : IQueryService<GameWagerQuery, GameWagerResult>
+internal class GameWagerQueryService(
+    IGameApiClient client) : IQueryService<GameWagerQuery, GameWagerResult>
 {
-    private readonly IGameApiClient _client;
-
-    public GameWagerQueryService(
-        IGameApiClient client)
-    {
-        _client = client ?? throw new ArgumentNullException(nameof(client));
-    }
-
     public async IAsyncEnumerable<GameWagerResult> QueryAsync(
         GameWagerQuery query,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var betRecords = await _client.BetRecordByPageAsyncc(
+        var betRecords = await client.BetRecordByPageAsyncc(
             apiUrl: query.ApiUrl,
             apiKey: query.ApiKey,
             apiSecret: query.ApiSecret,

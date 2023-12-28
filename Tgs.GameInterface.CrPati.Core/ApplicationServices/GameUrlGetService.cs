@@ -2,20 +2,13 @@
 
 namespace Tgs.GameInterface.CrPati.Core.ApplicationServices;
 
-public class GameUrlGetService : IGetService<GameUrlQuery, GameUrlResult>
+public class GameUrlGetService(IGameApiClient client) : IGetService<GameUrlQuery, GameUrlResult>
 {
-    private readonly IGameApiClient _client;
-
-    public GameUrlGetService(IGameApiClient client)
-    {
-        _client = client ?? throw new ArgumentNullException(nameof(client));
-    }
-
     public async ValueTask<GameUrlResult> GetAsync(
         GameUrlQuery query,
         CancellationToken cancellationToken = default)
     {
-        var result = await _client.LoginAsync(
+        var result = await client.LoginAsync(
             apiUrl: query.ApiUrl,
             apiKey: query.ApiKey,
             apiSecret: query.ApiSecret,

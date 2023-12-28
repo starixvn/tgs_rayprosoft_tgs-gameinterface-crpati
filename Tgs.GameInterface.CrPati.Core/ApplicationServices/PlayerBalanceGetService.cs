@@ -2,20 +2,13 @@
 
 namespace Tgs.GameInterface.CrPati.Core.ApplicationServices;
 
-public class PlayerBalanceGetService : IGetService<PlayerBalanceQuery, PlayerBalanceResult>
+public class PlayerBalanceGetService(IGameApiClient client) : IGetService<PlayerBalanceQuery, PlayerBalanceResult>
 {
-    private readonly IGameApiClient _client;
-
-    public PlayerBalanceGetService(IGameApiClient client)
-    {
-        _client = client ?? throw new ArgumentNullException(nameof(client));
-    }
-
     public async ValueTask<PlayerBalanceResult> GetAsync(
         PlayerBalanceQuery query,
         CancellationToken cancellationToken = default)
     {
-        var result = await _client.BalanceAsync(
+        var result = await client.BalanceAsync(
             apiUrl: query.ApiUrl,
             apiKey: query.ApiKey,
             apiSecret: query.ApiSecret,

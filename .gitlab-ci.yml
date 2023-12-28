@@ -59,8 +59,8 @@ push-nuget:
   only:
     - main
   script:
-    - dotnet pack -c $BuildConfiguration "Tgs.GameInterface.CrPati.Client/Tgs.GameInterface.CrPati.Client.csproj" --no-build --no-restore
-    - dotnet nuget push "Tgs.GameInterface.CrPati.Client/bin/$BuildConfiguration/*.nupkg" --source "raypro-baget" -k $NugetApiKey --skip-duplicate
+    - dotnet pack -c $BuildConfiguration "Tgs.GameInterface.CrPati.Client/Tgs.GameInterface.CrPati.Client.csproj" --no-restore
+    - dotnet nuget push "Tgs.GameInterface.CrPati.Client/bin/$BuildConfiguration/*.nupkg" -s "raypro-baget" -k $NugetApiKey --skip-duplicate
   artifacts:
     name: Nuget
     untracked: false
@@ -80,7 +80,13 @@ push-docker-image:
     untracked: true   
     policy: pull
   script:
-    - dotnet build "Tgs.GameInterface.CrPati/Tgs.GameInterface.CrPati.csproj" -c $BuildConfiguration -t:ContainerBuild -p:DockerfileTag="$ImageName:$Tag" --no-restore
+    #- dotnet build "Tgs.GameInterface.CrPati/Tgs.GameInterface.CrPati.csproj" -c $BuildConfiguration -t:ContainerBuild -p:DockerfileTag="$ImageName:$Tag" --no-restore
+    - dotnet publish "Tgs.GameInterface.CrPati" 
+       --os linux --arch x64
+       /t:PublishContainer
+       -c $BuildConfiguration
+       /p:ContainerRepository=$ImageName
+       /p:ContainerImageTag=$Tag
     - docker push $ImageName:$Tag
 
 push-k8s-template:

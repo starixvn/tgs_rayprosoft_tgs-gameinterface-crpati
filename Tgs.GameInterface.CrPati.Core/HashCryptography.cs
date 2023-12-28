@@ -5,16 +5,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Tgs.GameInterface.CrPati.Core;
 
-internal class HashCryptography : IHashCryptography
+internal class HashCryptography(
+    ILogger<HashCryptography> logger) : IHashCryptography
 {
-    private readonly ILogger<HashCryptography> _logger;
-
-    public HashCryptography(
-        ILogger<HashCryptography> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
     public string GetBalanceHash(string apiKey, string game, string memberAccount, string memberPassword, string apiSecret, long timestamp)
     {
         var stringBuilder = new StringBuilder();
@@ -27,7 +20,7 @@ internal class HashCryptography : IHashCryptography
 
         var hash = GetHash(stringBuilder.ToString());
 
-        _logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
+        logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
 
         return hash;
     }
@@ -44,7 +37,7 @@ internal class HashCryptography : IHashCryptography
 
         var hash = GetHash(stringBuilder.ToString());
 
-        _logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
+        logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
 
         return hash;
     }
@@ -62,7 +55,7 @@ internal class HashCryptography : IHashCryptography
 
         var hash = GetHash(stringBuilder.ToString());
 
-        _logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
+        logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
 
         return hash;
     }
@@ -81,7 +74,7 @@ internal class HashCryptography : IHashCryptography
 
         var hash = GetHash(stringBuilder.ToString());
 
-        _logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
+        logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
 
         return hash;
     }
@@ -98,7 +91,7 @@ internal class HashCryptography : IHashCryptography
 
         var hash = GetHash(stringBuilder.ToString());
 
-        _logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
+        logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
 
         return hash;
     }
@@ -118,7 +111,7 @@ internal class HashCryptography : IHashCryptography
 
         var hash = GetHash(stringBuilder.ToString());
 
-        _logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
+        logger.LogDebug("LogOn:{logOn} | data:{data} | hash:{hash}", DateTime.Now.ToString("o"), stringBuilder.ToString(), hash);
 
         return hash;
     }

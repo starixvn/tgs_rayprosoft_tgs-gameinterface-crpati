@@ -10,39 +10,24 @@ using Polly;
 using Tgs.GameInterface.CrPati.Core.Exceptions;
 using Tgs.GameInterface.CrPati.Core.Extensions;
 using Tgs.GameInterface.CrPati.Core.Models;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Tgs.GameInterface.CrPati.Core;
 
-internal class GameApiClient : IGameApiClient
+internal class GameApiClient(
+    ILogger<GameApiClient> logger,
+    IOptions<GameApiSettingsOptions> gameApiSettingsOptions,
+    IOptions<PolicySettingsOptions> policySettingsOptions,
+    ISystemClock systemClock,
+    IHashCryptography cryptography,
+    HttpClient client) : IGameApiClient
 {
-    private readonly ILogger<GameApiClient> _logger;
-    private readonly ISystemClock _systemClock;
-    private readonly IHashCryptography _cryptography;
-    private readonly HttpClient _client;
-    private readonly GameApiSettingsOptions _gameApiSettings;
-    private readonly PolicySettingsOptions _policySettings;
-
-    public GameApiClient(
-        ILogger<GameApiClient> logger,
-        IOptions<GameApiSettingsOptions> gameApiSettingsOptions,
-        IOptions<PolicySettingsOptions> policySettingsOptions,
-        ISystemClock systemClock,
-        IHashCryptography cryptography,
-        HttpClient client)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _gameApiSettings = gameApiSettingsOptions.Value;
-        _policySettings = policySettingsOptions.Value;
-        _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
-        _cryptography = cryptography ?? throw new ArgumentNullException(nameof(cryptography));
-        _client = client ?? throw new ArgumentNullException(nameof(client));
-    }
+    private readonly GameApiSettingsOptions _gameApiSettings = gameApiSettingsOptions.Value;
+    private readonly PolicySettingsOptions _policySettings = policySettingsOptions.Value;
 
     public async ValueTask<BalanceResult> BalanceAsync(Uri apiUrl, string apiKey, string apiSecret, string memberAccount, string userIP, CancellationToken cancellationToken = default)
     {
-        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
-        var hash = _cryptography.GetBalanceHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, apiSecret, timestamp);
+        var timestamp = systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = cryptography.GetBalanceHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, apiSecret, timestamp);
         var json = new JsonObject
         {
             ["ApiKey"] = apiKey,
@@ -71,8 +56,8 @@ internal class GameApiClient : IGameApiClient
 
     public async IAsyncEnumerable<BetRecordResult> BetRecordByPageAsyncc(Uri apiUrl, string apiKey, string apiSecret, DateTimeOffset startDate, DateTimeOffset endDate, int pageNumber = 1, int pageSize = 1000, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
-        var hash = _cryptography.GetBetRecordByPageHash(apiKey, _gameApiSettings.Game, startDate.DatetimeConvertToString(), endDate.DatetimeConvertToString(), apiSecret, timestamp);
+        var timestamp = systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = cryptography.GetBetRecordByPageHash(apiKey, _gameApiSettings.Game, startDate.DatetimeConvertToString(), endDate.DatetimeConvertToString(), apiSecret, timestamp);
         var json = new JsonObject
         {
             ["ApiKey"] = apiKey,
@@ -85,7 +70,6 @@ internal class GameApiClient : IGameApiClient
             ["Hash"] = hash
         };
 
-
         var retryPolicy = Policy
             .HandleResult<JsonNode>(jsonNode => !jsonNode["IsSuccess"]!.GetValue<bool>() && jsonNode["Code"]!.GetValue<int>() == 2019)
             .WaitAndRetryAsync(
@@ -93,9 +77,9 @@ internal class GameApiClient : IGameApiClient
             retryAttempt => TimeSpan.FromSeconds(_policySettings.BetRecordByPageRetryWaitSec),
             onRetry: (response, retryTime, context) =>
             {
-                _logger.LogWarning("LogOn:{logOn} | Message:拉單過於頻繁(兩次拉單時間間隔必須大於 10 秒 | Json:{jsonNode}", DateTime.Now.ToString("o"), response.Result.ToJsonString());
-                timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
-                hash = _cryptography.GetBetRecordByPageHash(apiKey, _gameApiSettings.Game, startDate.DatetimeConvertToString(), endDate.DatetimeConvertToString(), apiSecret, timestamp);
+                logger.LogWarning("LogOn:{logOn} | Message:拉單過於頻繁(兩次拉單時間間隔必須大於 10 秒 | Json:{jsonNode}", DateTime.Now.ToString("o"), response.Result.ToJsonString());
+                timestamp = systemClock.CurrentTime.ToUnixTimeSeconds();
+                hash = cryptography.GetBetRecordByPageHash(apiKey, _gameApiSettings.Game, startDate.DatetimeConvertToString(), endDate.DatetimeConvertToString(), apiSecret, timestamp);
                 json = new JsonObject
                 {
                     ["ApiKey"] = apiKey,
@@ -109,8 +93,8 @@ internal class GameApiClient : IGameApiClient
                 };
             });
 
-        var jsonNode = await retryPolicy .ExecuteAsync(
-            ()=> PostAsync(
+        var jsonNode = await retryPolicy.ExecuteAsync(
+            () => PostAsync(
                 apiUrl: apiUrl,
                 path: "/Api/Game/BetRecordByPage",
                 jsonNode: json,
@@ -126,7 +110,7 @@ internal class GameApiClient : IGameApiClient
 
         var datas = jsonNode["Data"]?.AsArray();
 
-        if (datas is null || !datas.Any())
+        if (datas is null || datas.Count == 0)
         {
             yield break;
         }
@@ -162,8 +146,8 @@ internal class GameApiClient : IGameApiClient
 
     public async ValueTask<bool> CheckTransferAsync(Uri apiUrl, string apiKey, string apiSecret, string memberAccount, string orderNo, string userIP, CancellationToken cancellationToken = default)
     {
-        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
-        var hash = _cryptography.GetCheckTransferHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, orderNo, apiSecret, timestamp);
+        var timestamp = systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = cryptography.GetCheckTransferHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, orderNo, apiSecret, timestamp);
         var json = new JsonObject
         {
             ["ApiKey"] = apiKey,
@@ -191,8 +175,8 @@ internal class GameApiClient : IGameApiClient
 
     public async ValueTask<LoginResult> LoginAsync(Uri apiUrl, string apiKey, string apiSecret, string memberAccount, string userIP, int languageCode, bool isMobile, bool isTrial, CancellationToken cancellationToken = default)
     {
-        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
-        var hash = _cryptography.GetLoginHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, _gameApiSettings.GameCode, userIP, apiSecret, timestamp);
+        var timestamp = systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = cryptography.GetLoginHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, _gameApiSettings.GameCode, userIP, apiSecret, timestamp);
         var json = new JsonObject
         {
             ["ApiKey"] = apiKey,
@@ -225,8 +209,8 @@ internal class GameApiClient : IGameApiClient
 
     public async ValueTask RegisterAsync(Uri apiUrl, string apiKey, string apiSecret, string memberAccount, string userIP, CancellationToken cancellationToken = default)
     {
-        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
-        var hash = _cryptography.GetRegisterHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, apiSecret, timestamp);
+        var timestamp = systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = cryptography.GetRegisterHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, apiSecret, timestamp);
         var json = new JsonObject
         {
             ["ApiKey"] = apiKey,
@@ -257,8 +241,8 @@ internal class GameApiClient : IGameApiClient
 
     public async ValueTask<TransferResult> TransferAsync(Uri apiUrl, string apiKey, string apiSecret, string memberAccount, TransType transType, decimal amount, string orderNo, string userIP, CancellationToken cancellationToken = default)
     {
-        var timestamp = _systemClock.CurrentTime.ToUnixTimeSeconds();
-        var hash = _cryptography.GetTransferHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, orderNo, transType.ToString(), amount, apiSecret, timestamp);
+        var timestamp = systemClock.CurrentTime.ToUnixTimeSeconds();
+        var hash = cryptography.GetTransferHash(apiKey, _gameApiSettings.Game, memberAccount, _gameApiSettings.MemberPassword, orderNo, transType.ToString(), amount, apiSecret, timestamp);
         var json = new JsonObject
         {
             ["ApiKey"] = apiKey,
@@ -299,7 +283,7 @@ internal class GameApiClient : IGameApiClient
 
         var sw = Stopwatch.StartNew();
 
-        var httpResponseMessage = await _client.PostAsync(
+        var httpResponseMessage = await client.PostAsync(
             requestUri: uriBuilder.ToString(),
             content: requestContent,
             cancellationToken: cancellationToken)
@@ -331,7 +315,7 @@ internal class GameApiClient : IGameApiClient
             RecordedOn = DateTimeOffset.UtcNow
         };
 
-        _logger.LogInformation("{logEvent}", JsonSerializer.Serialize(logEvent));
+        logger.LogInformation("{logEvent}", JsonSerializer.Serialize(logEvent));
 
         _ = httpResponseMessage.EnsureSuccessStatusCode();
 
