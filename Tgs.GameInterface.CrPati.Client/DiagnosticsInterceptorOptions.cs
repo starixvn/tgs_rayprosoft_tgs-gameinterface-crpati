@@ -4,6 +4,6 @@ namespace Tgs.GameInterface.CrPati.Client;
 
 public class DiagnosticsInterceptorOptions
 {
-    public ActivitySource InterceptorActivitySource { get; set; } =
-        new ActivitySource($"Tgs.GameInterface.CrPati.Client.DiagnosticsInterceptor");
+	public ActivitySource InterceptorActivitySource { get; set; } =
+		new ActivitySource($"Tgs.GameInterface.CrPati.Client.DiagnosticsInterceptor");
 }

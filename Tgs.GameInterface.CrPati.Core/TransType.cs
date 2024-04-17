@@ -2,6 +2,6 @@
 
 public enum TransType
 {
-    Deposit,
-    Withdraw
+	Deposit,
+	Withdraw
 }
