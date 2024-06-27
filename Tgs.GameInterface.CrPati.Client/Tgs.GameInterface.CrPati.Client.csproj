@@ -7,7 +7,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<Version>1.0.2</Version>
+		<Version>1.0.3</Version>
 		<Authors>Raypro</Authors>
 		<PackageProjectUrl>https://gitlab.com/rayprosoft/tgs-gameinterface-crpati</PackageProjectUrl>
 		<RepositoryUrl>https://gitlab.com/rayprosoft/tgs-gameinterface-crpati.git</RepositoryUrl>
@@ -37,11 +37,5 @@
 	  <ProjectReference Include="..\Tgs.GameInterface.CrPati.Protos\Tgs.GameInterface.CrPati.Protos.csproj">
 	    <PrivateAssets>all</PrivateAssets>
 	  </ProjectReference>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Protobuf Include="..\Tgs.GameInterface.CrPati\Protos\gameinterfacecrpati.proto">
-	    <Link>gameinterfacecrpati.proto</Link>
-	  </Protobuf>
 	</ItemGroup>
 </Project>

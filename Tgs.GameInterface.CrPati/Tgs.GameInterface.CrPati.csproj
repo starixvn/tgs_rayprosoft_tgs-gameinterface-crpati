@@ -14,10 +14,6 @@
 		<NoWarn>$(NoWarn);1591;0063</NoWarn>
 	</PropertyGroup>
 
-	<ItemGroup>
-		<None Remove="Protos\gameinterfacecrpati.proto" />
-	</ItemGroup>
-
 
 	<ItemGroup>
 		<PackageReference Include="FluentdForward.OpenTelemetry.MessagePack" Version="0.3.8" />
@@ -41,10 +37,6 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Tgs.GameInterface.CrPati.Core\Tgs.GameInterface.CrPati.Core.csproj" />
 		<ProjectReference Include="..\Tgs.GameInterface.CrPati.Protos\Tgs.GameInterface.CrPati.Protos.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Protobuf Include="Protos\gameinterfacecrpati.proto" />
 	</ItemGroup>
 
 </Project>
