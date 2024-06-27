@@ -40,6 +40,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Tgs.GameInterface.CrPati.Core\Tgs.GameInterface.CrPati.Core.csproj" />
+		<ProjectReference Include="..\Tgs.GameInterface.CrPati.Protos\Tgs.GameInterface.CrPati.Protos.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
