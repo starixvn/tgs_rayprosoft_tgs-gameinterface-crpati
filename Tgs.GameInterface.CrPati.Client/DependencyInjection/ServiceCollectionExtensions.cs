@@ -27,12 +27,15 @@ public static class ServiceCollectionExtensions
 			})
 			.ConfigureChannel((sp, configureChannel) =>
 			{
+				var options = sp.GetRequiredService<IOptions<GameInterfaceCrPatiClientOptions>>().Value;
+
 				var handler = new SocketsHttpHandler
 				{
 					PooledConnectionIdleTimeout = Timeout.InfiniteTimeSpan,
 					KeepAlivePingDelay = TimeSpan.FromSeconds(60),
 					KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
-					EnableMultipleHttp2Connections = true
+					EnableMultipleHttp2Connections = true,
+					ConnectTimeout = options.GrpcConnectTimeout
 				};
 				var defaultMethodConfig = new MethodConfig
 				{
